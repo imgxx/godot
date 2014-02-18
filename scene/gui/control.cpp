@@ -1407,6 +1407,8 @@ Ref<Font> Control::get_font(const StringName& p_name,const StringName& p_type) c
 
 		if (theme_owner->data.theme->has_font(p_name, type ) )
 			return data.theme_owner->data.theme->get_font(p_name, type );
+		if (theme_owner->data.theme->get_default_theme_font().is_valid())
+			return theme_owner->data.theme->get_default_theme_font();
 		Control *parent = theme_owner->get_parent()?theme_owner->get_parent()->cast_to<Control>():NULL;
 
 		if (parent)
@@ -2794,6 +2796,7 @@ void Control::_bind_methods() {
 	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"size_flags/horizontal", PROPERTY_HINT_FLAGS, "Expand,Fill"), _SCS("set_h_size_flags"),_SCS("get_h_size_flags") );
 	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"size_flags/vertical", PROPERTY_HINT_FLAGS, "Expand,Fill"), _SCS("set_v_size_flags"),_SCS("get_v_size_flags") );
 	ADD_PROPERTY( PropertyInfo(Variant::INT,"size_flags/stretch_ratio", PROPERTY_HINT_RANGE, "1,128,0.01"), _SCS("set_stretch_ratio"),_SCS("get_stretch_ratio") );
+	ADD_PROPERTYNZ( PropertyInfo(Variant::OBJECT,"theme/theme", PROPERTY_HINT_RESOURCE_TYPE, "Theme"), _SCS("set_theme"),_SCS("get_theme") );
 
 	BIND_CONSTANT( ANCHOR_BEGIN );
 	BIND_CONSTANT( ANCHOR_END );

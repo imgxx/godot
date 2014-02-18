@@ -471,6 +471,18 @@ Error EditorExportPlatform::export_project_files(EditorExportSaveFunction p_func
 		EditorImportExport::get_singleton()->image_export_get_images_in_group(E->get(),&atlas_images);
 		atlas_images.sort_custom<StringName::AlphCompare>();
 
+		for (List<StringName>::Element *F=atlas_images.front();F;) {
+
+			List<StringName>::Element *N=F->next();
+
+			if (!FileAccess::exists(F->get())) {
+				atlas_images.erase(F);
+			}
+
+			F=N;
+
+		}
+
 		if (atlas_images.size()<=1)
 			continue;
 
@@ -814,6 +826,13 @@ Error EditorExportPlatform::save_pack_file(void *p_userdata,const String& p_path
 	pd->file_ofs.push_back(td);
 	pd->f->store_64(0); //ofs
 	pd->f->store_64(0); //size
+	{
+		MD5_CTX ctx;
+		MD5Init(&ctx);
+		MD5Update(&ctx,(unsigned char*)p_data.ptr(),p_data.size());
+		MD5Final(&ctx);
+		pd->f->store_buffer(ctx.digest,16);
+	}
 	pd->ep->step("Storing File: "+p_path,2+p_file*100/p_total);
 	pd->count++;
 	pd->ftmp->store_buffer(p_data.ptr(),p_data.size());
@@ -829,7 +848,8 @@ Error EditorExportPlatform::save_pack(FileAccess *dst,bool p_make_bundles) {
 	FileAccess *tmp = FileAccess::open(tmppath,FileAccess::WRITE);
 	uint64_t ofs_begin = dst->get_pos();
 
-	dst->store_32(0x4b435047); //GPCK
+	dst->store_32(0x43504447); //GDPK
+	dst->store_32(0); //pack version
 	dst->store_32(VERSION_MAJOR);
 	dst->store_32(VERSION_MINOR);
 	dst->store_32(VERSION_REVISION);
@@ -872,7 +892,7 @@ Error EditorExportPlatform::save_pack(FileAccess *dst,bool p_make_bundles) {
 	memdelete(tmp);
 
 	dst->store_64(dst->get_pos()-ofs_begin);
-	dst->store_32(0x4b435047); //GPCK
+	dst->store_32(0x43504447); //GDPK
 
 	//fix offsets
 

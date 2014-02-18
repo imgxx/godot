@@ -1111,10 +1111,20 @@ void EditorNode::_dialog_action(String p_file) {
 			}
 			int ret = unzGoToFirstFile(pkg);
 
+			int fc=0; //coun them
 
-			EditorProgress p("ltask","Loading Export Templates",1);
+			while(ret==UNZ_OK) {
+				fc++;
+				ret = unzGoToNextFile(pkg);
+
+			}
+
+			ret = unzGoToFirstFile(pkg);
+
+			EditorProgress p("ltask","Loading Export Templates",fc);
 			print_line("BEGIN IMPORT");
 
+			fc=0;
 
 			while(ret==UNZ_OK) {
 
@@ -1123,19 +1133,25 @@ void EditorNode::_dialog_action(String p_file) {
 				char fname[16384];
 				ret = unzGetCurrentFileInfo(pkg,&info,fname,16384,NULL,0,NULL,0);
 
+
 				String file=fname;
 
 				Vector<uint8_t> data;
 				data.resize(info.uncompressed_size);
 
 				//read
-				unzOpenCurrentFile(pkg);
-				unzReadCurrentFile(pkg,data.ptr(),data.size());
+				ret = unzOpenCurrentFile(pkg);
+				ret = unzReadCurrentFile(pkg,data.ptr(),data.size());
 				unzCloseCurrentFile(pkg);
+
+				print_line(fname);
+				//for(int i=0;i<512;i++) {
+				//	print_line(itos(data[i]));
+				//}
 
 				file=file.get_file();
 
-				p.step("Importing: "+file,0);
+				p.step("Importing: "+file,fc);
 				print_line("IMPORT "+file);
 
 				FileAccess *f = FileAccess::open(EditorSettings::get_singleton()->get_settings_path()+"/templates/"+file,FileAccess::WRITE);
@@ -1146,6 +1162,7 @@ void EditorNode::_dialog_action(String p_file) {
 				memdelete(f);
 
 				ret = unzGoToNextFile(pkg);
+				fc++;
 			}
 
 			unzClose(pkg);
@@ -1459,7 +1476,7 @@ void EditorNode::_run(bool p_current,const String& p_custom) {
 			current_option=-1;
 			//accept->get_cancel()->hide();
 			accept->get_ok()->set_text("I see..");
-			accept->set_text("No main scene has ever been defined.\nSelect one from \"Project Settings\" under the 'run' category.");
+			accept->set_text("No main scene has ever been defined.\nSelect one from \"Project Settings\" under the 'application' category.");
 			accept->popup_centered(Size2(300,100));;
 			return;
 		}
@@ -3148,6 +3165,7 @@ Error EditorNode::export_platform(const String& p_platform, const String& p_path
 
 EditorNode::EditorNode() {
 
+	EditorHelp::generate_doc(); //before any editor classes are crated
 
 	singleton=this;
 
@@ -3944,7 +3962,7 @@ EditorNode::EditorNode() {
 	//add_editor_plugin( memnew( AnimationEditorPlugin(this) ) ); - not useful anymore
 	add_editor_plugin( memnew( ShaderEditorPlugin(this) ) );
 	add_editor_plugin( memnew( CameraEditorPlugin(this) ) );
-	add_editor_plugin( memnew( FontEditorPlugin(this) ) );
+	//add_editor_plugin( memnew( FontEditorPlugin(this) ) ); obsolete
 	add_editor_plugin( memnew( SampleEditorPlugin(this) ) );
 	add_editor_plugin( memnew( SampleLibraryEditorPlugin(this) ) );
 	add_editor_plugin( memnew( ThemeEditorPlugin(this) ) );

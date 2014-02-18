@@ -1475,10 +1475,14 @@ Error OS_Windows::execute(const String& p_path, const List<String>& p_arguments,
 	ZeroMemory( &pi.si, sizeof(pi.si) );
 	pi.si.cb = sizeof(pi.si);
 	ZeroMemory( &pi.pi, sizeof(pi.pi) );
+	LPSTARTUPINFOW si_w = (LPSTARTUPINFOW) &pi.si;
 
 	print_line("running cmdline: "+cmdline);
-
-	int ret = CreateProcess(NULL, (LPSTR)cmdline.utf8().get_data(), NULL, NULL, 0, NORMAL_PRIORITY_CLASS, NULL, NULL, &pi.si, &pi.pi);
+	Vector<CharType> modstr; //windows wants to change this no idea why
+	modstr.resize(cmdline.size());
+	for(int i=0;i<cmdline.size();i++)
+		modstr[i]=cmdline[i];
+	int ret = CreateProcessW(NULL, modstr.ptr(), NULL, NULL, 0, NORMAL_PRIORITY_CLASS, NULL, NULL, si_w, &pi.pi);
 	ERR_FAIL_COND_V(ret == 0, ERR_CANT_FORK);
 
 	if (p_blocking) {
@@ -1523,6 +1527,15 @@ Error OS_Windows::set_cwd(const String& p_cwd) {
 	return OK;
 }
 
+String OS_Windows::get_executable_path() const {
+
+	wchar_t bufname[4096];
+	GetModuleFileNameW(NULL,bufname,4096);
+	String s= bufname;
+	print_line("EXEC PATHPó: "+s);
+	return s;
+}
+
 void OS_Windows::set_icon(const Image& p_icon) {
 
 
@@ -1534,7 +1547,9 @@ void OS_Windows::set_icon(const Image& p_icon) {
 
 	/* Create temporary bitmap buffer */
 	int icon_len = 40 + h * w * 4;
-	BYTE *icon_bmp = (BYTE*)alloca(icon_len);
+	Vector<BYTE> v;
+	v.resize(icon_len);
+	BYTE *icon_bmp = &v[0];
 
 	encode_uint32(40,&icon_bmp[0]);
 	encode_uint32(w,&icon_bmp[4]);
@@ -1582,7 +1597,11 @@ bool OS_Windows::has_environment(const String& p_var) const {
 
 String OS_Windows::get_environment(const String& p_var) const {
 
-	return getenv(p_var.utf8().get_data());
+	char* val = getenv(p_var.utf8().get_data());
+	if (val)
+		return val;
+
+	return "";
 };
 
 String OS_Windows::get_stdin_string(bool p_block) {

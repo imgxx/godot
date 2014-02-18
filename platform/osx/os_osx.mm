@@ -378,8 +378,8 @@ static int button_mask=0;
 	prev_mouse_y=mouse_y;
 	const NSRect contentRect = [OS_OSX::singleton->window_view frame];
 	const NSPoint p = [event locationInWindow];
-	mouse_x = p.x;
-	mouse_y = contentRect.size.height - p.y;
+	mouse_x = p.x * [[event window] backingScaleFactor];
+	mouse_y = (contentRect.size.height - p.y) * [[event window] backingScaleFactor];
 	ev.mouse_motion.x=mouse_x;
 	ev.mouse_motion.y=mouse_y;
 	ev.mouse_motion.global_x=mouse_x;
@@ -392,6 +392,8 @@ static int button_mask=0;
 //	ev.mouse_motion.relative_x=[event deltaX];
 //	ev.mouse_motion.relative_y=[event deltaY];
 
+
+	OS_OSX::singleton->input->set_mouse_pos(Point2(mouse_x,mouse_y));
 	OS_OSX::singleton->push_input(ev);
 
 
@@ -1277,6 +1279,7 @@ OS_OSX* OS_OSX::singleton=NULL;
 
 OS_OSX::OS_OSX() {
 
+	main_loop=NULL;
 	singleton=this;
 	autoreleasePool = [[NSAutoreleasePool alloc] init];
 
